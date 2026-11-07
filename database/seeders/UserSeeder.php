@@ -13,7 +13,6 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Akun Admin
         User::create([
             'name'         => 'Admin Store',
             'email'        => 'admin@foodstore.com',
@@ -25,7 +24,6 @@ class UserSeeder extends Seeder
             'roles'        => 'ADMIN',
         ]);
 
-        // 2. Akun Regular User
         User::create([
             'name'         => 'John Doe',
             'email'        => 'user@foodstore.com',
