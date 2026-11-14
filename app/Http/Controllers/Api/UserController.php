@@ -24,7 +24,6 @@ public function store(Request $request)
             'email' => 'required|unique:users,email',
             'password' => 'required',
             'address' => 'required',
-            'house_number' => 'required',
             'phone_number' => 'required',
             'city' => 'required',
             'roles' => 'required',
@@ -39,7 +38,6 @@ public function store(Request $request)
             'email' => $request->email,
             'password' => bcrypt($request->password),
             'address' => $request->address,
-            'house_number' => $request->house_number,
             'phone_number' => $request->phone_number,
             'city' => $request->city,
             'roles' => $request->roles,
@@ -63,14 +61,15 @@ public function store(Request $request)
         return new UserResource(true, 'Detail Data Post', $posts);
     }
 
-    public function update(Request $request, $id)
+   public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required',
-            'email' => 'required',
-            'password' => 'required',
+            // Email harus unik, tapi abaikan untuk user dengan ID yang sedang diedit ini
+            'email' => 'required|email|unique:users,email,' . $id,
+            // Password diubah menjadi 'nullable' agar opsional (tidak wajib diisi saat edit)
+            'password' => 'nullable', 
             'address' => 'required',
-            'house_number' => 'required',
             'phone_number' => 'required',
             'city' => 'required',
             'roles' => 'required',
@@ -81,16 +80,23 @@ public function store(Request $request)
         }
 
         $posts = User::find($id);
-        $posts->update([
+
+        // Siapkan data dasar yang akan di-update
+        $updateData = [
             'name' => $request->name,
             'email' => $request->email,
-            'password' => bcrypt($request->password),
             'address' => $request->address,
-            'house_number' => $request->house_number,
             'phone_number' => $request->phone_number,
             'city' => $request->city,
             'roles' => $request->roles,
-        ]);
+        ];
+
+        // Cek jika password diisi oleh user, maka masukkan ke array update dan di-bcrypt
+        if ($request->filled('password')) {
+            $updateData['password'] = bcrypt($request->password);
+        }
+
+        $posts->update($updateData);
 
         return new UserResource(true, 'Data User Berhasil Diubah!', $posts);
     }
