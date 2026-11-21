@@ -17,16 +17,16 @@ class UserController extends Controller
         return new UserResource(true, 'List Data Users', $posts);
     }
 
-public function store(Request $request)
+    public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required',
-            'email' => 'required|unique:users,email',
-            'password' => 'required',
-            'address' => 'required',
+            'name'         => 'required',
+            'email'        => 'required|email|unique:users,email',
+            'password'     => 'required|min:6',
+            'address'      => 'required',
             'phone_number' => 'required',
-            'city' => 'required',
-            'roles' => 'required',
+            'city'         => 'required',
+            'roles'        => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -34,64 +34,68 @@ public function store(Request $request)
         }
 
         $posts = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-            'address' => $request->address,
+            'name'         => $request->name,
+            'email'        => $request->email,
+            'password'     => bcrypt($request->password),
+            'address'      => $request->address,
             'phone_number' => $request->phone_number,
-            'city' => $request->city,
-            'roles' => $request->roles,
+            'city'         => $request->city,
+            'roles'        => $request->roles,
         ]);
 
         return new UserResource(true, 'Data User Berhasil Ditambahkan!', $posts);
-    }
-
-    public function destroy($id)
-    {
-        $posts = User::find($id);
-        $posts->delete();
-
-        return new UserResource(true, 'Data User Berhasil Dihapus!', null);
     }
 
     public function show($id)
     {
         $posts = User::find($id);
 
-        return new UserResource(true, 'Detail Data Post', $posts);
+        if (!$posts) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data User Tidak Ditemukan!',
+                'data'    => null
+            ], 404);
+        }
+
+        return new UserResource(true, 'Detail Data User', $posts);
     }
 
-   public function update(Request $request, $id)
+    public function update(Request $request, $id)
     {
+        $posts = User::find($id);
+
+        if (!$posts) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data User Tidak Ditemukan!',
+                'data'    => null
+            ], 404);
+        }
+
         $validator = Validator::make($request->all(), [
-            'name' => 'required',
-            // Email harus unik, tapi abaikan untuk user dengan ID yang sedang diedit ini
-            'email' => 'required|email|unique:users,email,' . $id,
-            // Password diubah menjadi 'nullable' agar opsional (tidak wajib diisi saat edit)
-            'password' => 'nullable', 
-            'address' => 'required',
+            'name'         => 'required',
+            'email'        => 'required|email|unique:users,email,' . $id,
+            'password'     => 'nullable|min:6',
+            'address'      => 'required',
             'phone_number' => 'required',
-            'city' => 'required',
-            'roles' => 'required',
+            'city'         => 'required',
+            'roles'        => 'required',
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        $posts = User::find($id);
-
-        // Siapkan data dasar yang akan di-update
         $updateData = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'address' => $request->address,
+            'name'         => $request->name,
+            'email'        => $request->email,
+            'address'      => $request->address,
             'phone_number' => $request->phone_number,
-            'city' => $request->city,
-            'roles' => $request->roles,
+            'city'         => $request->city,
+            'roles'        => $request->roles,
         ];
 
-        // Cek jika password diisi oleh user, maka masukkan ke array update dan di-bcrypt
         if ($request->filled('password')) {
             $updateData['password'] = bcrypt($request->password);
         }
@@ -99,5 +103,22 @@ public function store(Request $request)
         $posts->update($updateData);
 
         return new UserResource(true, 'Data User Berhasil Diubah!', $posts);
+    }
+
+    public function destroy($id)
+    {
+        $posts = User::find($id);
+
+        if (!$posts) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data User Tidak Ditemukan!',
+                'data'    => null
+            ], 404);
+        }
+
+        $posts->delete();
+
+        return new UserResource(true, 'Data User Berhasil Dihapus!', null);
     }
 }
